@@ -43,19 +43,20 @@ EOF
 
           while [ $attempt -le $max_attempts ]; do
             echo "Attempt $attempt of $max_attempts..."
+
             if oci iam region list > /dev/null 2>&1; then
-              echo "✓ OCI connection successful"
+              echo "SUCCESS: OCI connection working"
               exit 0
             fi
-            
+
             if [ $attempt -lt $max_attempts ]; then
-              echo "✗ OCI connection failed. Retrying in ${delay}s..."
+              echo "Retrying in ${delay}s..."
               sleep $delay
               delay=$((delay * 2))
             fi
-            
+
             attempt=$((attempt + 1))
           done
-          
-          echo "✗ Failed to connect after $max_attempts attempts"
+
+          echo "FAILED after $max_attempts attempts"
           exit 1
