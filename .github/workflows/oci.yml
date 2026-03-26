@@ -16,18 +16,20 @@ jobs:
 
       - name: Setup config
         run: |
-          mkdir -p ~/.oci
-          echo "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
-          chmod 600 ~/.oci/oci_api_key.pem
+           mkdir -p ~/.oci
+           printf "%s" "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
+           chmod 600 ~/.oci/oci_api_key.pem
 
-          cat > ~/.oci/config <<EOF
-          [DEFAULT]
-          user=${{ secrets.OCI_USER_OCID }}
-          fingerprint=${{ secrets.OCI_FINGERPRINT }}
-          tenancy=${{ secrets.OCI_TENANCY_OCID }}
-          region=${{ secrets.OCI_REGION }}
-          key_file=/home/runner/.oci/oci_api_key.pem
-          EOF
+           cat > ~/.oci/config <<EOF
+           [DEFAULT]
+            user=${{ secrets.OCI_USER_OCID }}
+             fingerprint=${{ secrets.OCI_FINGERPRINT }}
+            tenancy=${{ secrets.OCI_TENANCY_OCID }}
+            region=${{ secrets.OCI_REGION }}
+            key_file=/home/runner/.oci/oci_api_key.pem
+            EOF
+
+            chmod 600 ~/.oci/config
 
       - name: Test OCI connection
         run: |
