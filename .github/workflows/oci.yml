@@ -10,27 +10,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install OCI CLI
         run: |
           pip install oci-cli
 
       - name: Setup config
         run: |
-           mkdir -p ~/.oci
-           printf "%s" "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
-           chmod 600 ~/.oci/oci_api_key.pem
+          mkdir -p ~/.oci
 
-           cat > ~/.oci/config <<EOF
-           [DEFAULT]
-            user=${{ secrets.OCI_USER_OCID }}
-             fingerprint=${{ secrets.OCI_FINGERPRINT }}
-            tenancy=${{ secrets.OCI_TENANCY_OCID }}
-            region=${{ secrets.OCI_REGION }}
-            key_file=/home/runner/.oci/oci_api_key.pem
-            EOF
+          printf "%s" "${{ secrets.OCI_PRIVATE_KEY }}" > ~/.oci/oci_api_key.pem
+          chmod 600 ~/.oci/oci_api_key.pem
 
-            chmod 600 ~/.oci/config
+          cat > ~/.oci/config <<EOF
+[DEFAULT]
+user=${{ secrets.OCI_USER_OCID }}
+fingerprint=${{ secrets.OCI_FINGERPRINT }}
+tenancy=${{ secrets.OCI_TENANCY_OCID }}
+region=${{ secrets.OCI_REGION }}
+key_file=/home/runner/.oci/oci_api_key.pem
+EOF
 
-      - name: Test OCI connection
+          chmod 600 ~/.oci/config
+
+      - name: Test OCI connection with retry
         run: |
-          oci iam region list
+          max_attempts=5
+          attempt=1
+          delay=10
+
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            if oci iam region list > /dev/null 2>&1; then
+              echo "✓ OCI connection successful"
+              exit 0
+            fi
+            
+            if [ $attempt -lt $max_attempts ]; then
+              echo "✗ OCI connection failed. Retrying in ${delay}s..."
+              sleep $delay
+              delay=$((delay * 2))
+            fi
+            
+            attempt=$((attempt + 1))
+          done
+          
+          echo "✗ Failed to connect after $max_attempts attempts"
+          exit 1
